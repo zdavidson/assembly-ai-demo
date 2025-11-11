@@ -61,26 +61,144 @@
   color: #9ca3af;
 }
 
+.fileUploadWrapper {
+  flex: 1;
+  position: relative;
+}
+
+.fileInput {
+  position: absolute;
+  width: 0.1px;
+  height: 0.1px;
+  opacity: 0;
+  overflow: hidden;
+  z-index: -1;
+}
+
+.fileLabel {
+  flex: 1;
+  display: block;
+  padding: 1rem 1.5rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #64748b;
+  background: white;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.fileLabel:hover {
+  border-color: #667eea;
+  background: #f8f9ff;
+  color: #667eea;
+}
+
+.fileInput:focus + .fileLabel {
+  border-color: #667eea;
+  background: #f8f9ff;
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+.speakerInputs {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.speakerInputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.speakerLabel {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.speakerInput {
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+}
+
+.speakerInput:focus {
+  border-color: #667eea;
+  background: #f8f9ff;
+}
+
+.speakerInput::placeholder {
+  color: #9ca3af;
+}
+
+.toggleGroup {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  user-select: none;
+}
+
+.toggleCheckbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.toggleText {
+  font-size: 1rem;
+  color: #475569;
+  font-weight: 500;
+}
+
 .submitButton {
   padding: 1rem 2.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
+  background: white;
+  color: #667eea;
+  border: 3px solid #667eea;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   white-space: nowrap;
+  margin-top: 1rem;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .submitButton:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+  background: #667eea;
+  color: white;
 }
 
 .submitButton:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -173,10 +291,30 @@
   line-height: 1.6;
 }
 
-.actionItemMeta {
-  color: #64748b;
-  font-size: 0.875rem;
-  font-weight: 500;
+.actionItemTitle {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+  line-height: 1.4;
+}
+
+.actionItemDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.actionItemDetail {
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.actionItemDetail strong {
+  color: #667eea;
+  font-weight: 600;
+  margin-right: 0.25rem;
 }
 
 .transcriptSection {
@@ -223,6 +361,23 @@
   overflow-y: auto;
 }
 
+.utterance {
+  color: #334155;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+  font-size: 0.95rem;
+}
+
+.utterance:last-child {
+  margin-bottom: 0;
+}
+
+.speaker {
+  color: #667eea;
+  font-weight: 600;
+  margin-right: 0.5rem;
+}
+
 .transcriptText {
   color: #334155;
   line-height: 1.8;
@@ -255,6 +410,11 @@
 
   .submitButton {
     width: 100%;
+  }
+
+  .speakerInputs {
+    grid-template-columns: 1fr;
+    padding: 1rem;
   }
 
   .summarySection,

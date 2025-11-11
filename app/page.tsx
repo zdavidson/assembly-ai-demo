@@ -1,20 +1,92 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import { useState } from 'react';
-import styles from './page.module.css';
+import { useState } from "react";
+import { AssemblyAI } from "assemblyai";
+import styles from "./page.module.css";
+import FileUpload from "../components/FileUpload";
+import ActionItems from "../components/ActionItems";
+import TranscriptSection from "../components/TranscriptSection";
+
+const client = new AssemblyAI({
+  apiKey: process.env.NEXT_PUBLIC_ASSEMBLY_AI_API_KEY!,
+});
 
 export default function Home() {
-  const [audioUrl, setAudioUrl] = useState('');
+  const [audioFile, setAudioFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showTranscript, setShowTranscript] = useState(false);
+  const [transcriptData, setTranscriptData] = useState<any>(null);
+  const [speakerAName, setSpeakerAName] = useState("");
+  const [speakerBName, setSpeakerBName] = useState("");
+  const [useLlmGateway, setUseLlmGateway] = useState(false);
 
-  // Mock data for UI demonstration
-  const hasMockData = false; // Toggle this to show/hide results
+  const handleSubmit = async () => {
+    if (!audioFile) return;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
     setIsProcessing(true);
-    // Logic will be implemented later
+
+    try {
+      // Upload file to AssemblyAI via our API route
+      const formData = new FormData();
+      formData.append("file", audioFile);
+
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to upload file");
+      }
+
+      const data = await response.json();
+      const audioSource = data.uploadUrl;
+
+      if (useLlmGateway) {
+        // Use LLM Gateway for analysis
+        const llmResponse = await fetch("/api/llm-analyze", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            audioUrl: audioSource,
+            speakerAName,
+            speakerBName,
+          }),
+        });
+
+        if (!llmResponse.ok) {
+          throw new Error("Failed to analyze with LLM Gateway");
+        }
+
+        const llmData = await llmResponse.json();
+        setTranscriptData(llmData);
+      } else {
+        // Use original AssemblyAI summarization
+        const transcript = await client.transcripts.transcribe({
+          audio: audioSource,
+          speaker_labels: true,
+          speech_understanding: {
+            request: {
+              speaker_identification: {
+                speaker_type: "name",
+                known_values: [speakerAName, speakerBName],
+              },
+            },
+          },
+          summarization: true,
+          summary_model: "conversational",
+          summary_type: "bullets",
+        });
+        setTranscriptData(transcript);
+      }
+    } catch (error) {
+      console.error("Error processing audio:", error);
+      alert("Failed to process audio. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -27,105 +99,23 @@ export default function Home() {
       </div>
 
       <div className={styles.main}>
-        <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.inputGroup}>
-            <input
-              type="url"
-              value={audioUrl}
-              onChange={(e) => setAudioUrl(e.target.value)}
-              placeholder="Paste your audio file URL here..."
-              className={styles.input}
-              required
-            />
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isProcessing}
-            >
-              {isProcessing ? 'Processing...' : 'Analyze'}
-            </button>
-          </div>
-        </form>
+        <FileUpload
+          audioFile={audioFile}
+          onFileChange={setAudioFile}
+          isProcessing={isProcessing}
+          onSubmit={handleSubmit}
+          speakerAName={speakerAName}
+          speakerBName={speakerBName}
+          onSpeakerANameChange={setSpeakerAName}
+          onSpeakerBNameChange={setSpeakerBName}
+          useLlmGateway={useLlmGateway}
+          onUseLlmGatewayChange={setUseLlmGateway}
+        />
 
-        {hasMockData && (
+        {transcriptData && (
           <div className={styles.results}>
-            <div className={styles.summarySection}>
-              <h2 className={styles.sectionTitle}>Summary</h2>
-              <div className={styles.summaryCard}>
-                <p className={styles.summaryText}>
-                  The team discussed the upcoming product launch scheduled for Q2.
-                  Key topics included marketing strategy, budget allocation, and timeline
-                  adjustments. The team agreed to accelerate the development phase and
-                  allocate additional resources to the design team.
-                </p>
-              </div>
-            </div>
-
-            <div className={styles.actionItemsSection}>
-              <h2 className={styles.sectionTitle}>Action Items</h2>
-              <div className={styles.actionItemsList}>
-                <div className={styles.actionItem}>
-                  <div className={styles.actionItemBullet}></div>
-                  <div className={styles.actionItemContent}>
-                    <p className={styles.actionItemText}>
-                      Sarah to finalize the marketing budget by end of week
-                    </p>
-                    <span className={styles.actionItemMeta}>Due: This Friday</span>
-                  </div>
-                </div>
-                <div className={styles.actionItem}>
-                  <div className={styles.actionItemBullet}></div>
-                  <div className={styles.actionItemContent}>
-                    <p className={styles.actionItemText}>
-                      John to schedule follow-up meeting with design team
-                    </p>
-                    <span className={styles.actionItemMeta}>Due: Next Monday</span>
-                  </div>
-                </div>
-                <div className={styles.actionItem}>
-                  <div className={styles.actionItemBullet}></div>
-                  <div className={styles.actionItemContent}>
-                    <p className={styles.actionItemText}>
-                      Team to review and approve the updated timeline
-                    </p>
-                    <span className={styles.actionItemMeta}>Due: Next Wednesday</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.transcriptSection}>
-              <button
-                onClick={() => setShowTranscript(!showTranscript)}
-                className={styles.transcriptToggle}
-              >
-                <span>{showTranscript ? '▼' : '▶'} Full Transcript</span>
-              </button>
-              {showTranscript && (
-                <div className={styles.transcriptContent}>
-                  <p className={styles.transcriptText}>
-                    <strong>Sarah:</strong> Good morning everyone. Let&apos;s start with
-                    the product launch timeline. We&apos;re currently looking at Q2, but
-                    I want to discuss if that&apos;s still realistic.
-                  </p>
-                  <p className={styles.transcriptText}>
-                    <strong>John:</strong> I think we can make it work if we accelerate
-                    the development phase. We might need to allocate more resources to
-                    the design team though.
-                  </p>
-                  <p className={styles.transcriptText}>
-                    <strong>Sarah:</strong> That makes sense. I&apos;ll finalize the marketing
-                    budget by end of week to see what we can allocate. John, can you
-                    schedule a follow-up with the design team?
-                  </p>
-                  <p className={styles.transcriptText}>
-                    <strong>John:</strong> Absolutely. I&apos;ll set that up for Monday.
-                    Everyone should review the updated timeline by Wednesday so we can
-                    approve it at our next meeting.
-                  </p>
-                </div>
-              )}
-            </div>
+            <ActionItems summary={transcriptData.summary} />
+            <TranscriptSection transcript={transcriptData.utterances} />
           </div>
         )}
       </div>
